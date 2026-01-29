@@ -16,6 +16,129 @@ A sophisticated AI/ML matching engine with:
 - **Batch Processing**: Handles thousands of matches efficiently
 - **Optimization Engine**: Maximizes overall allocation quality with capacity constraints
 - **RESTful API**: FastAPI with automatic OpenAPI documentation
+## Project Structure
+```
+pm-internship-backend/
+├── .github/                           # GitHub Actions workflows
+│   ├── workflows/
+│   │   ├── ci.yml
+│   │   └── cd.yml
+│
+├── src/
+│   ├── main.ts                        # Application entry point
+│   ├── app.module.ts                  # Root module
+│   │
+│   ├── common/                        # Shared utilities
+│   │   ├── decorators/                # Custom decorators
+│   │   │   └── current-user.decorator.ts
+│   │   ├── filters/                   # Exception filters
+│   │   │   └── all-exceptions.filter.ts
+│   │   ├── guards/                    # Global guards
+│   │   │   └── gql-auth.guard.ts
+│   │   ├── interceptors/              # Response interceptors
+│   │   │   ├── logging.interceptor.ts
+│   │   │   └── transform.interceptor.ts
+│   │   └── middlewares/               # Global middlewares
+│   │       └── logger.middleware.ts
+│   │
+│   ├── config/                        # Configuration
+│   │   ├── app.config.ts              # App configuration
+│   │   ├── database.config.ts         # Database config
+│   │   ├── redis.config.ts            # Redis config
+│   │   ├── graphql.config.ts          # GraphQL config
+│   │   ├── jwt.config.ts              # JWT config
+│   │   └── bull.config.ts             # Bull queue config
+│   │
+│   ├── core/                          # Core domain logic
+│   │   ├── enums/                     # Shared enums
+│   │   ├── interfaces/                # Shared interfaces
+│   │   └── types/                     # Shared types
+│   │
+│   └── modules/                       # Feature modules
+│       ├── auth/                      # Authentication module
+│       │   ├── auth.module.ts
+│       │   ├── auth.service.ts
+│       │   ├── auth.resolver.ts
+│       │   ├── strategies/
+│       │   │   ├── jwt.strategy.ts
+│       │   │   └── local.strategy.ts
+│       │   ├── guards/
+│       │   │   ├── gql-auth.guard.ts
+│       │   │   └── roles.guard.ts
+│       │   └── dto/
+│       │       ├── login.input.ts
+│       │       └── register.input.ts
+│       │
+│       ├── users/                     # User management
+│       │   ├── dto/                   # Data Transfer Objects
+│       │   ├── entities/              # TypeORM entities
+│       │   ├── users.module.ts
+│       │   ├── users.service.ts
+│       │   ├── users.resolver.ts
+│       │   └── users.repository.ts    # Repository pattern
+│       │
+│       ├── students/                  # Student profiles
+│       │   ├── dto/
+│       │   ├── entities/
+│       │   ├── students.module.ts
+│       │   ├── students.service.ts
+│       │   └── students.resolver.ts
+│       │
+│       ├── internships/               # Internship management
+│       │   ├── dto/
+│       │   ├── entities/
+│       │   ├── internships.module.ts
+│       │   ├── internships.service.ts
+│       │   └── internships.resolver.ts
+│       │
+│       ├── applications/              # Application management
+│       │   ├── dto/
+│       │   ├── entities/
+│       │   ├── applications.module.ts
+│       │   ├── applications.service.ts
+│       │   └── applications.resolver.ts
+│       │
+│       ├── matching/                  # AI Matching engine
+│       │   ├── dto/
+│       │   ├── entities/
+│       │   ├── strategies/            # Different matching strategies
+│       │   ├── matching.module.ts
+│       │   ├── matching.service.ts
+│       │   └── matching.resolver.ts
+│       │
+│       └── notifications/             # Notifications
+│           ├── dto/
+│           ├── templates/             # Email/notification templates
+│           ├── notifications.module.ts
+│           ├── notifications.service.ts
+│           └── notifications.processor.ts
+│
+├── ml-service/                        # Python ML Service
+│   ├── app/
+│   │   ├── api/                       # FastAPI routes
+│   │   ├── core/                      # Core ML logic
+│   │   ├── models/                    # ML models
+│   │   └── services/                  # Business logic
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── tests/                             # Testing
+│   ├── unit/                          # Unit tests
+│   ├── integration/                   # Integration tests
+│   └── e2e/                           # E2E tests
+│
+├── docker/                            # Docker setup
+│   ├── nginx/                         # Nginx config
+│   ├── postgres/                      # DB init scripts
+│   └── redis/                         # Redis config
+│
+├── .env.example                       # Environment variables
+├── docker-compose.yml                 # Local development
+├── docker-compose.prod.yml            # Production setup
+├── nest-cli.json
+├── package.json
+└── README.md
+```
 
 **Key Files**:
 - `app/main.py`: FastAPI application entry point
@@ -219,38 +342,6 @@ DIVERSITY_WEIGHT=0.10
 MAX_MATCHES_PER_STUDENT=10
 MIN_MATCH_SCORE=0.5
 ```
-
-## Project Structure
-
-```
-├── frontend/               # Next.js frontend
-│   ├── app/               # Pages
-│   └── components/        # React components
-|
-├── nestbackend/           # NestJS backend
-├── test/                   # Tests
-├── src/                    # NestJS backend
-│   └── modules/
-│       ├── matching/       # Matching module
-│       ├── students/       # Student management
-│       ├── internships/    # Internship management
-│       └── applications/   # Application tracking
-│   
-├── ml-service/              # Python ML service
-│   ├── app/
-│   │   ├── api/            # FastAPI routes
-│   │   ├── core/           # Core logic
-│   │   ├── models/         # Data models
-│   │   └── services/       # Business logic
-│   ├── requirements.txt
-│   └── Dockerfile
-
-├── docker-compose.yml     # Orchestration
-├── PROJECT_SUMMARY.md     # Project summary
-├── README.md              # Project overview
-└── Documentation files
-```
-
 ## Next Steps
 
 ### Immediate
@@ -315,132 +406,6 @@ The system is ready to be deployed and can handle the PM Internship Scheme's req
 2. **Backend** (NestJS/GraphQL): API gateway and business logic
 3. **Frontend** (Next.js/React): User interface
 4. **Infrastructure** (PostgreSQL, Redis, Docker): Data and deployment
-
-
-
-## Project Structure
-```
-pm-internship-backend/
-├── .github/                           # GitHub Actions workflows
-│   ├── workflows/
-│   │   ├── ci.yml
-│   │   └── cd.yml
-│
-├── src/
-│   ├── main.ts                        # Application entry point
-│   ├── app.module.ts                  # Root module
-│   │
-│   ├── common/                        # Shared utilities
-│   │   ├── decorators/                # Custom decorators
-│   │   │   └── current-user.decorator.ts
-│   │   ├── filters/                   # Exception filters
-│   │   │   └── all-exceptions.filter.ts
-│   │   ├── guards/                    # Global guards
-│   │   │   └── gql-auth.guard.ts
-│   │   ├── interceptors/              # Response interceptors
-│   │   │   ├── logging.interceptor.ts
-│   │   │   └── transform.interceptor.ts
-│   │   └── middlewares/               # Global middlewares
-│   │       └── logger.middleware.ts
-│   │
-│   ├── config/                        # Configuration
-│   │   ├── app.config.ts              # App configuration
-│   │   ├── database.config.ts         # Database config
-│   │   ├── redis.config.ts            # Redis config
-│   │   ├── graphql.config.ts          # GraphQL config
-│   │   ├── jwt.config.ts              # JWT config
-│   │   └── bull.config.ts             # Bull queue config
-│   │
-│   ├── core/                          # Core domain logic
-│   │   ├── enums/                     # Shared enums
-│   │   ├── interfaces/                # Shared interfaces
-│   │   └── types/                     # Shared types
-│   │
-│   └── modules/                       # Feature modules
-│       ├── auth/                      # Authentication module
-│       │   ├── auth.module.ts
-│       │   ├── auth.service.ts
-│       │   ├── auth.resolver.ts
-│       │   ├── strategies/
-│       │   │   ├── jwt.strategy.ts
-│       │   │   └── local.strategy.ts
-│       │   ├── guards/
-│       │   │   ├── gql-auth.guard.ts
-│       │   │   └── roles.guard.ts
-│       │   └── dto/
-│       │       ├── login.input.ts
-│       │       └── register.input.ts
-│       │
-│       ├── users/                     # User management
-│       │   ├── dto/                   # Data Transfer Objects
-│       │   ├── entities/              # TypeORM entities
-│       │   ├── users.module.ts
-│       │   ├── users.service.ts
-│       │   ├── users.resolver.ts
-│       │   └── users.repository.ts    # Repository pattern
-│       │
-│       ├── students/                  # Student profiles
-│       │   ├── dto/
-│       │   ├── entities/
-│       │   ├── students.module.ts
-│       │   ├── students.service.ts
-│       │   └── students.resolver.ts
-│       │
-│       ├── internships/               # Internship management
-│       │   ├── dto/
-│       │   ├── entities/
-│       │   ├── internships.module.ts
-│       │   ├── internships.service.ts
-│       │   └── internships.resolver.ts
-│       │
-│       ├── applications/              # Application management
-│       │   ├── dto/
-│       │   ├── entities/
-│       │   ├── applications.module.ts
-│       │   ├── applications.service.ts
-│       │   └── applications.resolver.ts
-│       │
-│       ├── matching/                  # AI Matching engine
-│       │   ├── dto/
-│       │   ├── entities/
-│       │   ├── strategies/            # Different matching strategies
-│       │   ├── matching.module.ts
-│       │   ├── matching.service.ts
-│       │   └── matching.resolver.ts
-│       │
-│       └── notifications/             # Notifications
-│           ├── dto/
-│           ├── templates/             # Email/notification templates
-│           ├── notifications.module.ts
-│           ├── notifications.service.ts
-│           └── notifications.processor.ts
-│
-├── ml-service/                        # Python ML Service
-│   ├── app/
-│   │   ├── api/                       # FastAPI routes
-│   │   ├── core/                      # Core ML logic
-│   │   ├── models/                    # ML models
-│   │   └── services/                  # Business logic
-│   ├── requirements.txt
-│   └── Dockerfile
-│
-├── tests/                             # Testing
-│   ├── unit/                          # Unit tests
-│   ├── integration/                   # Integration tests
-│   └── e2e/                           # E2E tests
-│
-├── docker/                            # Docker setup
-│   ├── nginx/                         # Nginx config
-│   ├── postgres/                      # DB init scripts
-│   └── redis/                         # Redis config
-│
-├── .env.example                       # Environment variables
-├── docker-compose.yml                 # Local development
-├── docker-compose.prod.yml            # Production setup
-├── nest-cli.json
-├── package.json
-└── README.md
-```
 
 ## Project setup
 
@@ -507,9 +472,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## Stay in touch
 
 - Author - [Suyash Singh](https://twitter.com/SuyashSingh_01)
-- Website - [https://nestjs.com](https://nestjs.com/)
+- Website - [https://suyashsingh.com](https://suyashsingh1.vercel.app/)
 
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Nest is [MIT licensed](https://github.com/suyashsingh1/Internship-Management-System/blob/master/LICENSE).
