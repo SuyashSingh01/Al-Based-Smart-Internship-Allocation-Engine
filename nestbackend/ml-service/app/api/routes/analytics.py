@@ -7,7 +7,7 @@ from app.services.analytics_service import AnalyticsService
 router = APIRouter()
 
 @router.post("/generate", response_model=AnalyticsResponse)
-async def generate_analytics(request: AnalyticsRequest):
+def generate_analytics(request: AnalyticsRequest):
     try:
         logger.info(f"Generating analytics for {len(request.match_results)} match results")
         

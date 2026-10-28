@@ -1,113 +1,66 @@
+// MUST be the very first import — sets up OpenTelemetry auto-instrumentation
+// before any other module loads (otherwise instrumentations cannot patch them).
+import './tracing';
+
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
-import { DocumentBuilder, SwaggerModule, OpenAPIObject } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
 const logger = new Logger('Bootstrap');
 
-// Convert to top-level await
-const start = async () => {
-  try {
-    const app = await NestFactory.create(AppModule);
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule);
 
-    // Enable CORS
-    app.enableCors({
-      origin: process.env.CLIENT_URL || 'http://localhost:3001',
-      credentials: true,
+  // CLIENT_URL may be a comma-separated allow-list of frontend origins.
+  const origins = (process.env.CLIENT_URL ?? 'http://localhost:3001')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: origins, credentials: true });
+
+  // Validation is registered once, globally, as APP_PIPE in AppModule.
+  // Let class-validator resolve custom constraint classes through Nest DI.
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
+
+  // Run OnModuleDestroy / OnApplicationShutdown on SIGTERM (Redis, BullMQ, OTel flush).
+  app.enableShutdownHooks();
+
+  if (process.env.NODE_ENV !== 'production') {
+    // Swagger covers the REST surface (OAuth token endpoints, health, JWKS).
+    // The main API is GraphQL — explore it at /graphql.
+    const config = new DocumentBuilder()
+      .setTitle('Internship Platform API')
+      .setDescription('REST endpoints: OAuth 2.0 token service, health checks, JWKS')
+      .setVersion('1.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
+      .build();
+    const document = SwaggerModule.createDocument(app, config, {
+      operationIdFactory: (_controllerKey: string, methodKey: string) => methodKey,
     });
-
-    // Global validation pipe
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-        transformOptions: {
-          enableImplicitConversion: true,
-        },
-      }),
-    );
-
-    // Enable DI for class-validator
-    const appSelect = app.select(AppModule);
-    useContainer(appSelect, { 
-      fallbackOnErrors: true
+    SwaggerModule.setup('api', app, document, {
+      swaggerOptions: { persistAuthorization: true, tagsSorter: 'alpha', operationsSorter: 'alpha' },
     });
-    // Handle container errors globally
-    process.on('unhandledRejection', (reason: unknown) => {
-      const error = reason instanceof Error 
-        ? reason 
-        : new Error(String(reason));
-      logger.error('Unhandled Rejection:', error);
-    });
-    
-    process.on('uncaughtException', (error: unknown) => {
-      if (error === null || error === undefined) {
-        logger.error('Uncaught Exception: Received null or undefined');
-        return;
-      }
-      
-      const safeError = error instanceof Error 
-        ? error 
-        : new Error(`Non-Error exception: ${String(error as unknown)}`);
-      
-      logger.error('Uncaught Exception:', safeError);
-    });
-
-    // Swagger documentation
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        const config: Omit<OpenAPIObject, 'paths'> = new DocumentBuilder()
-          .setTitle('Internship Platform API')
-          .setDescription('API documentation for Internship Platform')
-          .setVersion('1.0')
-          .addBearerAuth(
-            {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-              name: 'JWT',
-              description: 'Enter JWT token',
-              in: 'header',
-            },
-            'JWT-auth', // This name is used to reference this security scheme
-          )
-          .build();
-        const document = SwaggerModule.createDocument(app, config, {
-          operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
-        });
-        SwaggerModule.setup('api', app, document, {
-          swaggerOptions: {
-            persistAuthorization: true,
-            tagsSorter: 'alpha',
-            operationsSorter: 'alpha',
-          },
-        });
-        logger.log('Swagger documentation initialized at /api');
-      } catch (swaggerError: unknown) {
-        if (swaggerError instanceof Error) {
-          logger.error('Failed to initialize Swagger: ' + swaggerError.message, swaggerError.stack);
-        } else {
-          logger.error('Failed to initialize Swagger: ' + String(swaggerError));
-        }
-      }
-    }
-
-    const port = process.env.PORT || 3000;
-    await app.listen(port);
-    logger.log(`Application is running on: http://localhost:${port}`);
-  } catch (error) {
-    logger.error('Failed to start application', error instanceof Error ? error : new Error(String(error)));
-    process.exit(1);
   }
-};
 
-// Start the application
-start().catch((error: unknown) => {
-  logger.error(
-    'Failed to bootstrap application',
-    error instanceof Error ? error : new Error(String(error)),
-  );
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  logger.log(`HTTP + GraphQL listening on http://localhost:${port} (GraphQL at /graphql)`);
+}
+
+process.on('unhandledRejection', (reason: unknown) => {
+  logger.error('Unhandled promise rejection', reason instanceof Error ? reason.stack : String(reason));
+});
+
+// After an uncaught exception the process state is undefined: log and exit so
+// the orchestrator (Docker / k8s) restarts a clean instance.
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught exception — exiting', error?.stack ?? String(error));
+  process.exit(1);
+});
+
+bootstrap().catch((error: unknown) => {
+  logger.error('Failed to bootstrap application', error instanceof Error ? error.stack : String(error));
   process.exit(1);
 });

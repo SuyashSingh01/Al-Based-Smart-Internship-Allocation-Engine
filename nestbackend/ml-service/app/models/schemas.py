@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 from typing import List, Optional, Dict
 from enum import Enum
 
@@ -56,7 +56,11 @@ class InternshipOpportunity(BaseModel):
     filled_positions: int = Field(default=0, ge=0)
     min_cgpa: float = Field(default=0.0, ge=0.0, le=10.0)
     preferred_fields: List[str] = []
-    
+    preferred_skills: List[str] = []
+    required_languages: List[str] = []
+    hard_min_cgpa: Optional[float] = None
+    hard_min_qualification: Optional[QualificationLevel] = None
+
     @validator('filled_positions')
     def validate_filled_positions(cls, v, values):
         if 'capacity' in values and v > values['capacity']:
@@ -79,6 +83,11 @@ class MatchScore(BaseModel):
     location_score: float
     sector_score: float
     diversity_score: float
+    field_score: float = 0.0
+    certification_score: float = 0.0
+    language_score: float = 0.0
+    ranker_score: Optional[float] = None
+    eligible: bool = True
     explanation: Dict[str, str]
 
 class MatchResult(BaseModel):
@@ -97,6 +106,31 @@ class SingleMatchRequest(BaseModel):
     student: StudentProfile
     internships: List[InternshipOpportunity]
     max_matches: int = Field(default=10, ge=1, le=50)
+
+class RankRequest(BaseModel):
+    student: StudentProfile
+    internships: List[InternshipOpportunity]
+    max_matches: int = Field(default=10, ge=1, le=50)
+    min_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    candidate_pool_size: int = Field(default=100, ge=1, le=1000)
+    apply_hard_filter: bool = True
+    use_trained_ranker: bool = True
+    diversity_boost: bool = True
+
+class TrainRequest(BaseModel):
+    n_samples: int = Field(default=5000, ge=100, le=100000)
+    random_seed: int = Field(default=42)
+
+class TrainResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
+    n_samples: int
+    n_features: int
+    train_accuracy: float
+    val_accuracy: float
+    val_roc_auc: float
+    model_path: str
+    feature_importances: Dict[str, float]
 
 class AnalyticsRequest(BaseModel):
     match_results: List[MatchResult]

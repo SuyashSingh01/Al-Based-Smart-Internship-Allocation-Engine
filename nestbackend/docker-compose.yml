@@ -1,93 +1,100 @@
-version: '3.8'
+# Full local stack: Postgres + Redis + ML service + NestJS backend.
+#
+#   cp .env.example .env            # then set ML_SERVICE_API_KEY etc.
+#   docker compose up -d --build
+#   docker compose exec backend node dist/scripts/seed.js   # optional demo data
+#
+# The frontend is behind a profile (not built by default):
+#   docker compose --profile frontend up -d --build
 
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: pm-internship-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pm_internship
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: internship
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - pm-internship-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d internship"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: pm-internship-redis
+    command: ["redis-server", "--appendonly", "yes"] # persist BullMQ jobs across restarts
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - pm-internship-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   ml-service:
     build:
       context: ./ml-service
-      dockerfile: Dockerfile
-    container_name: pm-internship-ml-service
     environment:
-      ML_SERVICE_HOST: 0.0.0.0
-      ML_SERVICE_PORT: 8000
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      API_KEY: ${ML_SERVICE_API_KEY:-your-secret-api-key-here}
+      API_KEY: ${ML_SERVICE_API_KEY:?set ML_SERVICE_API_KEY in .env}
+      CORS_ORIGINS: http://localhost:3001
     ports:
       - "8000:8000"
-    depends_on:
-      - redis
     volumes:
-      - ./ml-service/models:/app/models
-    networks:
-      - pm-internship-network
+      - ml_models:/app/models # trained ranker survives container rebuilds
     restart: unless-stopped
 
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: pm-internship-backend
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pm_internship
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_DATABASE: internship
+      # Production mode disables auto schema sync; enable it explicitly for this
+      # local stack until migrations are added (see docs: future improvements).
+      DB_SYNCHRONIZE: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       ML_SERVICE_URL: http://ml-service:8000
-      ML_SERVICE_API_KEY: ${ML_SERVICE_API_KEY:-your-secret-api-key-here}
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-here}
+      ML_SERVICE_API_KEY: ${ML_SERVICE_API_KEY:?set ML_SERVICE_API_KEY in .env}
+      JWT_ISSUER: http://localhost:3000
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:-}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:-}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3001}
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-true}
     ports:
       - "3000:3000"
     depends_on:
-      - postgres
-      - redis
-      - ml-service
-    networks:
-      - pm-internship-network
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
+    profiles: ["frontend"]
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: pm-internship-frontend
+      context: ../frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3000/graphql
     ports:
-      - "4200:3000"
+      - "3001:3000"
     depends_on:
       - backend
-    networks:
-      - pm-internship-network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
-
-networks:
-  pm-internship-network:
-    driver: bridge
+  ml_models:

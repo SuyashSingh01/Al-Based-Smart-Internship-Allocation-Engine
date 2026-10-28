@@ -5,19 +5,22 @@ from loguru import logger
 
 from app.models.schemas import (
     MatchRequest, BatchMatchResponse, MatchResult,
-    SingleMatchRequest, StudentProfile, InternshipOpportunity
+    SingleMatchRequest, StudentProfile, InternshipOpportunity,
+    RankRequest,
 )
 from app.services.matching_engine import MatchingEngine
-from app.core.model_manager import ModelManager
-from app.main import model_manager
+from app.dependencies import model_manager
 
 router = APIRouter()
+
+# Handlers are plain `def` on purpose: scoring is CPU-bound (embeddings, sklearn),
+# so FastAPI runs them in its threadpool instead of blocking the event loop.
 
 def get_matching_engine() -> MatchingEngine:
     return MatchingEngine(model_manager)
 
 @router.post("/batch", response_model=BatchMatchResponse)
-async def batch_match(
+def batch_match(
     request: MatchRequest,
     engine: MatchingEngine = Depends(get_matching_engine)
 ):
@@ -64,7 +67,7 @@ async def batch_match(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/single", response_model=MatchResult)
-async def single_match(
+def single_match(
     request: SingleMatchRequest,
     engine: MatchingEngine = Depends(get_matching_engine)
 ):
@@ -90,8 +93,40 @@ async def single_match(
         logger.error(f"Error in single matching: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/rank", response_model=MatchResult)
+def rank(
+    request: RankRequest,
+    engine: MatchingEngine = Depends(get_matching_engine),
+):
+    """Two-stage ranking: hard filter -> semantic pre-rank -> trained ranker."""
+    try:
+        logger.info(
+            f"Ranking student {request.student.student_id} against "
+            f"{len(request.internships)} internships"
+        )
+        matches = engine.rank_student(
+            student=request.student,
+            internships=request.internships,
+            max_matches=request.max_matches,
+            candidate_pool_size=request.candidate_pool_size,
+            apply_hard_filter=request.apply_hard_filter,
+            use_trained_ranker=request.use_trained_ranker,
+            diversity_boost=request.diversity_boost,
+            min_score=request.min_score,
+        )
+        return MatchResult(
+            student_id=request.student.student_id,
+            student_name=request.student.name,
+            matches=matches,
+            total_matches=len(matches),
+        )
+    except Exception as e:
+        logger.error(f"Error in ranking: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/optimize")
-async def optimize_allocation(
+def optimize_allocation(
     students: List[StudentProfile],
     internships: List[InternshipOpportunity],
     diversity_boost: bool = True,
