@@ -1,18 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { CompaniesResolver } from './companies.resolver';
+import { UserRole } from '../../enums/auth/user-role';
+import { requiresAuth, rolesOf } from '../../common/testing/metadata';
 
-describe('CompaniesResolver', () => {
-  let resolver: CompaniesResolver;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CompaniesResolver],
-    }).compile();
-
-    resolver = module.get<CompaniesResolver>(CompaniesResolver);
+describe('CompaniesResolver (authorization contract)', () => {
+  it.each(['companies', 'company'])('%s is public (company directory)', (method) => {
+    expect(requiresAuth(CompaniesResolver, method)).toBe(false);
   });
 
-  it('should be defined', () => {
-    expect(resolver).toBeDefined();
+  it.each([
+    ['myCompany', [UserRole.COMPANY]],
+    ['createCompany', [UserRole.ADMIN, UserRole.COMPANY]],
+    ['updateCompany', [UserRole.ADMIN, UserRole.COMPANY]],
+    ['removeCompany', [UserRole.ADMIN]],
+  ])('%s requires auth and roles %j', (method, roles) => {
+    expect(requiresAuth(CompaniesResolver, method)).toBe(true);
+    expect(rolesOf(CompaniesResolver, method)).toEqual(roles);
   });
 });

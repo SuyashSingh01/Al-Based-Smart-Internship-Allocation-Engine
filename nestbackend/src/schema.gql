@@ -1,0 +1,428 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Application {
+  appliedAt: DateTime!
+  coverLetter: String
+  id: ID!
+  internship: Internship
+  internshipId: String!
+  matchScore: MatchScore
+  respondedAt: DateTime
+  status: ApplicationStatus!
+  student: Student
+  studentId: String!
+  updatedAt: DateTime!
+}
+
+enum ApplicationStatus {
+  ACCEPTED
+  MATCHED
+  PENDING
+  REJECTED
+  WITHDRAWN
+}
+
+enum AuthProvider {
+  APPLE
+  GITHUB
+  GOOGLE
+  LOCAL
+  META
+  SERVICE
+}
+
+type AuthResponse {
+  tokens: TokenPairDto!
+  user: User!
+}
+
+type Company {
+  createdAt: DateTime!
+  description: String
+  headquartersLocation: String
+  id: ID!
+  internships: [Internship!]
+  isVerified: Boolean!
+  logoUrl: String
+  name: String!
+  ownerUser: User
+  ownerUserId: String
+  sector: String
+  updatedAt: DateTime!
+  website: String
+}
+
+type CountByKey {
+  count: Int!
+  key: String!
+}
+
+input CreateApplicationInput {
+  coverLetter: String
+  internshipId: ID!
+  studentId: ID
+}
+
+input CreateCompanyInput {
+  description: String
+  headquartersLocation: String
+  logoUrl: String
+  name: String!
+  ownerUserId: String
+  sector: String
+  website: String
+}
+
+input CreateInternshipInput {
+  capacity: Int! = 1
+  companyId: String
+  companyName: String
+  description: String!
+  durationMonths: Int!
+  isActive: Boolean! = true
+  location: String!
+  minCgpa: Float! = 0
+  preferredFields: [String!]
+  preferredQualification: QualificationLevel!
+  preferredSkills: [String!]
+  requiredLanguages: [String!]
+  requiredSkills: [String!]!
+  sector: String!
+  stipend: Float
+  title: String!
+}
+
+input CreateStudentInput {
+  certifications: [String!]
+  cgpa: Float!
+  districtType: DistrictType! = URBAN
+  email: String!
+  fieldOfStudy: String!
+  languages: [String!]
+  locationPreference: [String!]!
+  name: String!
+  pastInternships: Int! = 0
+  phone: String
+  qualification: QualificationLevel!
+  resumeUrl: String
+  sectorInterests: [String!]!
+  skills: [String!]!
+  socialCategory: SocialCategory! = GENERAL
+  userId: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum DistrictType {
+  ASPIRATIONAL
+  RURAL
+  URBAN
+}
+
+type Internship {
+  applications: [Application!]
+  capacity: Int!
+  company: Company
+  companyId: String
+  companyName: String!
+  createdAt: DateTime!
+  description: String!
+  durationMonths: Int!
+  filledPositions: Int!
+  id: ID!
+  isActive: Boolean!
+  location: String!
+  minCgpa: Float!
+  preferredFields: [String!]
+  preferredQualification: QualificationLevel!
+  preferredSkills: [String!]
+  requiredLanguages: [String!]
+  requiredSkills: [String!]!
+  sector: String!
+  stipend: Float
+  title: String!
+  updatedAt: DateTime!
+}
+
+"""Arbitrary JSON value"""
+scalar JSON
+
+enum JobStatus {
+  COMPLETED
+  FAILED
+  PENDING
+  PROCESSING
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type MatchExplanation {
+  certifications: String
+  diversity: String
+  field: String
+  languages: String
+  location: String
+  qualification: String
+  ranker: String
+  sector: String
+  skills: String
+  weightedScore: String
+}
+
+input MatchRequestInput {
+  diversityBoost: Boolean! = true
+  internshipIds: [ID!]
+  maxMatchesPerStudent: Int! = 10
+  minScoreThreshold: Float! = 0.3
+  studentIds: [ID!]
+}
+
+type MatchResult {
+  matches: [MatchScore!]!
+  studentId: String!
+  studentName: String!
+  totalMatches: Int!
+}
+
+type MatchScore {
+  application: Application
+  applicationId: String
+  certificationScore: Float
+  createdAt: DateTime!
+  diversityScore: Float!
+  eligible: Boolean
+  explanation: MatchExplanation
+  fieldScore: Float
+  id: ID!
+  internship: Internship
+  internshipId: String!
+  languageScore: Float
+  locationScore: Float!
+  overallScore: Float!
+  qualificationScore: Float!
+  rankerScore: Float
+  sectorScore: Float!
+  skillScore: Float!
+  student: Student
+  studentId: String!
+  updatedAt: DateTime!
+}
+
+type MatchingJob {
+  completedAt: DateTime
+  correlationId: String
+  createdAt: DateTime!
+  error: String
+  failedStudents: Int!
+  id: ID!
+  payload: JSON
+  processedStudents: Int!
+  requestedBy: String
+  result: JSON
+  status: JobStatus!
+  totalStudents: Int!
+  type: String!
+  updatedAt: DateTime!
+}
+
+type Mutation {
+  createApplication(input: CreateApplicationInput!): Application!
+  createCompany(input: CreateCompanyInput!): Company!
+  createInternship(input: CreateInternshipInput!): Internship!
+  createStudent(input: CreateStudentInput!): Student!
+  login(loginInput: LoginInput!): AuthResponse!
+  logout: Boolean!
+  refreshTokens(refreshToken: String!): AuthResponse!
+  register(registerInput: RegisterInput!): AuthResponse!
+  removeApplication(id: ID!): Boolean!
+  removeCompany(id: ID!): Boolean!
+  removeInternship(id: ID!): Boolean!
+  removeStudent(id: ID!): Boolean!
+  runSingleMatch(input: SingleMatchInput!): MatchResult!
+  startBatchMatch(input: MatchRequestInput!): MatchingJob!
+  updateApplicationStatus(id: ID!, input: UpdateApplicationStatusInput!): Application!
+  updateCompany(id: ID!, input: UpdateCompanyInput!): Company!
+  updateInternship(id: ID!, input: UpdateInternshipInput!): Internship!
+  updateStudent(id: ID!, input: UpdateStudentInput!): Student!
+  withdrawApplication(id: ID!): Application!
+}
+
+type PlatformStats {
+  activeInternships: Int!
+  applications: Int!
+  applicationsByStatus: [CountByKey!]!
+  avgMatchScore: Float
+  companies: Int!
+  filledSeats: Int!
+  internships: Int!
+  internshipsBySector: [CountByKey!]!
+  matchScores: Int!
+  students: Int!
+  totalSeats: Int!
+  underrepresentedStudentsMatched: Int!
+  users: Int!
+}
+
+enum QualificationLevel {
+  DIPLOMA
+  DOCTORATE
+  POSTGRADUATE
+  UNDERGRADUATE
+}
+
+type Query {
+  application(id: ID!): Application!
+  applications(skip: Int = 0, take: Int = 100): [Application!]!
+  applicationsByInternship(internshipId: ID!): [Application!]!
+  applicationsByStudent(studentId: ID!): [Application!]!
+  checkMLServiceHealth: Boolean!
+  companies(search: String, skip: Int = 0, take: Int = 50): [Company!]!
+  company(id: ID!): Company!
+  internship(id: ID!): Internship!
+  internships(companyId: ID, location: String, onlyActive: Boolean = true, onlyWithCapacity: Boolean = false, search: String, sector: String, skip: Int = 0, take: Int = 50): [Internship!]!
+  matchingJobStatus(jobId: ID!): MatchingJob!
+  matchingJobs(take: Int = 20): [MatchingJob!]!
+  me: User!
+  myApplications: [Application!]!
+  myCompany: Company
+  myMatches(take: Int = 20): [MatchScore!]!
+  myStudentProfile: Student
+  platformStats: PlatformStats!
+  student(id: ID!): Student!
+  students(search: String, skip: Int = 0, take: Int = 50): [Student!]!
+  topMatchesForStudent(studentId: ID!, take: Int = 20): [MatchScore!]!
+  users(role: UserRole, skip: Int = 0, take: Int = 50): [User!]!
+}
+
+input RegisterInput {
+  email: String!
+  name: String!
+  password: String!
+  role: UserRole
+}
+
+input SingleMatchInput {
+  internshipIds: [ID!]
+  maxMatches: Int! = 10
+  studentId: ID
+}
+
+enum SocialCategory {
+  EWS
+  GENERAL
+  OBC
+  SC
+  ST
+}
+
+type Student {
+  applications: [Application!]
+  certifications: [String!]
+  cgpa: Float!
+  createdAt: DateTime!
+  districtType: DistrictType!
+  email: String!
+  fieldOfStudy: String!
+  id: ID!
+  languages: [String!]
+  locationPreference: [String!]!
+  name: String!
+  pastInternships: Int!
+  phone: String
+  qualification: QualificationLevel!
+  resumeUrl: String
+  sectorInterests: [String!]!
+  skills: [String!]!
+  socialCategory: SocialCategory!
+  updatedAt: DateTime!
+  user: User
+  userId: String
+}
+
+type TokenPairDto {
+  accessToken: String!
+  accessTokenExpiresIn: Int!
+  refreshToken: String!
+  refreshTokenExpiresIn: Int!
+  tokenType: String!
+}
+
+input UpdateApplicationStatusInput {
+  status: ApplicationStatus!
+}
+
+input UpdateCompanyInput {
+  description: String
+  headquartersLocation: String
+  logoUrl: String
+  name: String
+  ownerUserId: String
+  sector: String
+  website: String
+}
+
+input UpdateInternshipInput {
+  capacity: Int = 1
+  companyId: String
+  companyName: String
+  description: String
+  durationMonths: Int
+  isActive: Boolean = true
+  location: String
+  minCgpa: Float = 0
+  preferredFields: [String!]
+  preferredQualification: QualificationLevel
+  preferredSkills: [String!]
+  requiredLanguages: [String!]
+  requiredSkills: [String!]
+  sector: String
+  stipend: Float
+  title: String
+}
+
+input UpdateStudentInput {
+  certifications: [String!]
+  cgpa: Float
+  districtType: DistrictType = URBAN
+  email: String
+  fieldOfStudy: String
+  languages: [String!]
+  locationPreference: [String!]
+  name: String
+  pastInternships: Int = 0
+  phone: String
+  qualification: QualificationLevel
+  resumeUrl: String
+  sectorInterests: [String!]
+  skills: [String!]
+  socialCategory: SocialCategory = GENERAL
+  userId: String
+}
+
+type User {
+  authProvider: AuthProvider!
+  avatarUrl: String
+  createdAt: DateTime!
+  email: String!
+  emailVerified: Boolean!
+  id: String!
+  lastLoginAt: DateTime
+  name: String!
+  providerAccountId: String
+  role: UserRole
+  updatedAt: DateTime!
+}
+
+enum UserRole {
+  ADMIN
+  COMPANY
+  STUDENT
+}

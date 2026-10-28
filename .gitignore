@@ -1,8 +1,20 @@
-# compiled output
-nestbackend/dist
-nestbackend/node_modules
-frontend/node_modules
-/build
+# Python
+**/venv/
+**/.venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+**/.pytest_cache/
+**/.ipynb_checkpoints/
+**/.mypy_cache/
+
+# Node.js
+**/node_modules/
+**/dist/
+**/build/
+.npm
+.eslintcache
+.stylelintcache
 
 # Logs
 logs
@@ -15,22 +27,23 @@ lerna-debug.log*
 
 # OS
 .DS_Store
+Thumbs.db
+desktop.ini
 
 # Tests
-/coverage
-/.nyc_output
+**/coverage/
+.nyc_output
 
 # IDEs and editors
-/.idea
+/docs
+.idea/
 .project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -44,8 +57,8 @@ lerna-debug.log*
 .env.local
 
 # temp directory
-.temp
-.tmp
+.temp/
+.tmp/
 
 # Runtime data
 pids
@@ -53,5 +66,5 @@ pids
 *.seed
 *.pid.lock
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
+# Diagnostic reports
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
